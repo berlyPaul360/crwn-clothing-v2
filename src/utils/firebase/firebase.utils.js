@@ -3,6 +3,7 @@ import { getAuth,
         signInWithPopup,
         GoogleAuthProvider,
         createUserWithEmailAndPassword, 
+        signInWithEmailAndPassword
         } from 'firebase/auth';
 import {
     getFirestore,
@@ -12,53 +13,56 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
+  
     apiKey: "AIzaSyCpympEn6U7kQ3qHbeYVC8TRujLEkUh0Mk",
     authDomain: "beyond-clothing-db.firebaseapp.com",
     projectId: "beyond-clothing-db",
     storageBucket: "beyond-clothing-db.appspot.com",
     messagingSenderId: "303263965417",
     appId: "1:303263965417:web:3b5c31453c7c7aa5ff1078"
+
   };
   
   // Initialize Firebase
   const firebaseApp = initializeApp(firebaseConfig);
-
   const provider = new GoogleAuthProvider();
-
   provider.setCustomParameters({
+
     prompt: 'select_account'
 
   });
 
   export const auth = getAuth();//returns an auth instance
   export const signInWithGooglePopup = () => signInWithPopup(auth,provider);//returns user-credential object
-
   export const db = getFirestore();//returns database instance
-
   export const createUserDocumentFromAuth = async( userAuth,additionalInformation = {}) => {
+
     // creates db instance...under "users collection" and with object returned from sign-in uid
       const userDocRef = doc(db, 'users',userAuth.uid);// returns Document Reference object
-      
       console.log(userDocRef);
-
       const userSnapshot = await getDoc(userDocRef);//returns Document snapshot object
       console.log(userSnapshot);
       console.log(userSnapshot.exists());
       //if userSnapshot.exists is false at default
       //if !userSnapshot.exists is true then create Doc Ref Obj to register user 
       if(!userSnapshot.exists()){
+
         const { displayName, email } = userAuth;
         const createdAt = new Date();
 
           try{
+
             await setDoc(userDocRef,{
               displayName,
               email,
               createdAt,
               ...additionalInformation,
+
             });
           }catch(error){
+
           console.log('error creating the user', error.message);
+
         }
 
       }
@@ -69,11 +73,21 @@ const firebaseConfig = {
 
       //return userdocment reference
       return userDocRef;
-  };
 
+  };
+////////////CREATING USER DOCUMENT//////////////////////////////////////////
   export const createAuthUserWithEmailAndPassword = async (email, password) => {
 
       if(!email || !password) return;
-
       return await createUserWithEmailAndPassword(auth,email,password);
+
   }
+
+  ///////////SIGNING USER IN/////////////////////////////////////////////////////
+  export const signInAuthUserWithEmailAndPassword = async (email, password) => {
+
+    if(!email || !password) return;
+    return await signInWithEmailAndPassword(auth,email,password);
+
+}
+
