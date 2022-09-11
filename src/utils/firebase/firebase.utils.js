@@ -3,13 +3,19 @@ import { getAuth,
         signInWithPopup,
         GoogleAuthProvider,
         createUserWithEmailAndPassword, 
-        signInWithEmailAndPassword
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
         } from 'firebase/auth';
 import {
     getFirestore,
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    collection,
+    writeBatch,
+    query,
+    getDocs
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -31,17 +37,47 @@ const firebaseConfig = {
     prompt: 'select_account'
 
   });
-
   export const auth = getAuth();//returns an auth instance
   export const signInWithGooglePopup = () => signInWithPopup(auth,provider);//returns user-credential object
   export const db = getFirestore();//returns database instance
+  export const addCollectionAndDocuments = async (collectionKey,objectsToAdd,field) =>{
+
+      const collectionRef = collection(db,collectionKey);
+      const batch = writeBatch(db);
+      objectsToAdd.forEach((object)=>{
+
+          const docRef=doc(collectionRef,object.title.toLowerCase())
+          batch.set(docRef,object);
+
+      });
+
+      await batch.commit();
+      console.log('done');
+
+  } 
+
+  export const getCategoriesAndDocuments = async () => {
+
+       const collectionRef = collection(db,'categories');
+       const q = query(collectionRef);
+       const querySnapshot = await getDocs(q);
+       const categoryMap = querySnapshot.docs.reduce((acc,docSnapshot)=>{
+
+        const { title,items } = docSnapshot.data();
+        acc[title.toLowerCase()] = items;
+        return acc;
+
+       },{});
+       return categoryMap;
+
+  }
   export const createUserDocumentFromAuth = async( userAuth,additionalInformation = {}) => {
 
     // creates db instance...under "users collection" and with object returned from sign-in uid
       const userDocRef = doc(db, 'users',userAuth.uid);// returns Document Reference object
-      console.log(userDocRef);
+      //console.log(userDocRef);
       const userSnapshot = await getDoc(userDocRef);//returns Document snapshot object
-      console.log(userSnapshot);
+      //console.log(userSnapshot);
       console.log(userSnapshot.exists());
       //if userSnapshot.exists is false at default
       //if !userSnapshot.exists is true then create Doc Ref Obj to register user 
@@ -81,7 +117,7 @@ const firebaseConfig = {
       if(!email || !password) return;
       return await createUserWithEmailAndPassword(auth,email,password);
 
-  }
+  };
 
   ///////////SIGNING USER IN/////////////////////////////////////////////////////
   export const signInAuthUserWithEmailAndPassword = async (email, password) => {
@@ -89,5 +125,11 @@ const firebaseConfig = {
     if(!email || !password) return;
     return await signInWithEmailAndPassword(auth,email,password);
 
-}
+};
+
+export const signOutUser = async () => await signOut(auth);
+
+export const onAuthStateChangedListener = (callback) => onAuthStateChanged(auth,callback);
+
+    
 
